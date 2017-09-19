@@ -75,3 +75,10 @@ class PEParser:
             }
 
             self.dict_pe['sections'].append(section)
+
+    def dump_imports(self):
+        imports_win = self.pe.get_imports()
+        self.dict_pe['imports'] = Utils.get_imports(imports_win)
+        imphash, impfuzzy = Utils.get_hashes_imports(self.dict_pe['imports'])
+        self.dict_pe['hashes']['imphash'] = imphash
+        self.dict_pe['hashes']['impfuzzy'] = impfuzzy

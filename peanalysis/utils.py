@@ -4,6 +4,7 @@ from collections import Counter
 import ssdeep
 import hashlib
 import pepy
+from peanalysis.ordinal import ord_translate
 
 class Utils:
 
@@ -82,3 +83,29 @@ class Utils:
             p_x = float(x) / size
             entropy -= p_x * math.log(p_x, 2)
         return entropy
+
+    @staticmethod
+    def get_imports(imports_win):
+        imps = {}
+        for imp in imports_win:
+            dll, sym = imp.name, imp.sym
+            if 'ORDINAL' in sym:
+                tokens = sym.split('_')
+                number_entry = tokens[len(tokens) - 1]
+                sym = ord_translate[dll][int(number_entry)].decode()
+            try:
+                imps[dll].append(sym)
+
+            except KeyError:
+                imps[dll] = [sym]
+
+        return imps
+
+    @staticmethod
+    def get_hashes_imports(imports_win):
+        imphash=0
+        impfuzzy = 0
+        imps = ['%s.%s' % (dll.lower(),s.lower()) for dll, symbols in imports_win.items() for s in symbols]
+        impfuzzy = ssdeep.hash(','.join(sorted(imps)))
+        imphash = hashlib.md5(','.join(imps).encode()).hexdigest()
+        return imphash, impfuzzy
