@@ -18,7 +18,7 @@ class PEParser:
         self.dict_pe = {
             'type': 'PE',
             'sections': [],
-            'address_entrypoint': hex(self.pe.get_entrypoint()),
+            'address_entrypoint': hex(self.pe.get_entry_point()),
             'section_entrypoint': '',
             'path': self.path,
             'hashes': {
@@ -29,22 +29,25 @@ class PEParser:
             'imports': {},
             'tls': [],
             'strings': [],
-            'is_dll': self.pe,
-            'is_driver': self.pe.is_driver(),
-            'is_exe': self.pe.is_exe(),
+            'is_dll': False,
+            'is_driver': False,
+            'is_exe': False,
             'x86': self.pe.machine == 0x14c,
             'x86_64': self.pe.machine == 0x8664 or self.pe.machine == 0x0200,
             'size': os.stat(self.path).st_size,
             'number_sections': 0,
             'ressources': {},
-            'Date Compilation': datetime.datetime.fromtimestamp(int(self.pe.timestamp)
+            'Date Compilation': datetime.datetime.fromtimestamp(int(self.pe.timedatestamp)
                                                                 ).strftime('%Y-%m-%d %H:%M:%S')
         }
 
     def dump_sections(self):
 
         for sec in self.pe.get_sections():
-            md5_sec, sha1_sec, sha256_sec, ssdeep_sec = 0
+            md5_sec = None
+            sha1_sec = None
+            sha256_sec = None
+            ssdeep_sec = None
             entropy = 0.0
 
             charac_sections = {}
@@ -52,7 +55,7 @@ class PEParser:
             data = sec.data
 
             if data:
-                md5_sec, sha1_sec, sha256_sec,ssdeep_sec = Utils.get_hashes_section(data)
+                md5_sec, sha1_sec, sha256_sec, ssdeep_sec = Utils.get_hashes_section(data)
                 entropy = Utils.get_entropy(data, sec.length)
             char = sec.characteristics
             if char:

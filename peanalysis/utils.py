@@ -3,7 +3,7 @@ from collections import Counter
 
 import ssdeep
 import hashlib
-
+import pepy
 
 class Utils:
 
@@ -17,9 +17,9 @@ class Utils:
         md5_hash.update(data)
         sha1_hash.update(data)
         sha256_hash.update(data)
-        ssdeep_hash.update(data)
+        ssdeep_hash.update(bytes(data))
 
-        return md5_hash.hexdisget(), sha1_hash.hexdisgest(), sha256_hash.hexdigest(), ssdeep_hash.digest()
+        return md5_hash.hexdigest(), sha1_hash.hexdigest(), sha256_hash.hexdigest(), ssdeep_hash.digest()
 
     @staticmethod
     def get_char_sections(char):
