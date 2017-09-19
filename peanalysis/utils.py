@@ -1,5 +1,5 @@
 import math
-from collections import Counter
+from collections import Counter, OrderedDict
 
 import ssdeep
 import hashlib
@@ -86,7 +86,7 @@ class Utils:
 
     @staticmethod
     def get_imports(imports_win):
-        imps = {}
+        imps = OrderedDict()
         for imp in imports_win:
             dll, sym = imp.name, imp.sym
             if 'ORDINAL' in sym:
@@ -105,7 +105,7 @@ class Utils:
     def get_hashes_imports(imports_win):
         imphash=0
         impfuzzy = 0
-        imps = ['%s.%s' % (dll.lower(),s.lower()) for dll, symbols in imports_win.items() for s in symbols]
+        imps = ['%s.%s' % (dll.lower().split('.')[0], s.lower()) for dll, symbols in imports_win.items() for s in symbols]
         impfuzzy = ssdeep.hash(','.join(sorted(imps)))
         imphash = hashlib.md5(','.join(imps).encode()).hexdigest()
         return imphash, impfuzzy
