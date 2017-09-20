@@ -9,7 +9,7 @@ from peanalysis.ordinal import ord_translate
 class Utils:
 
     @staticmethod
-    def get_hashes_section(data):
+    def get_hashes(data):
         md5_hash = hashlib.md5()
         sha1_hash = hashlib.sha1()
         sha256_hash = hashlib.sha256()
@@ -71,6 +71,13 @@ class Utils:
                  }
 
     @staticmethod
+    def get_characteristics(characteristics):
+        is_dll = bool(characteristics & 0x2000)
+        is_driver = bool(characteristics & 0x1000)
+        is_exe = bool(characteristics & 0x0002)
+        return is_exe, is_dll, is_driver
+
+    @staticmethod
     def get_entropy(data, size):
 
         if len(data) == 0:
@@ -109,3 +116,20 @@ class Utils:
         impfuzzy = ssdeep.hash(','.join(sorted(imps)))
         imphash = hashlib.md5(','.join(imps).encode()).hexdigest()
         return imphash, impfuzzy
+
+    @staticmethod
+    def get_exports(exports_win):
+        exps = OrderedDict()
+        for imp in exports_win:
+            dll, sym = imp.name, imp.sym
+            if 'ORDINAL' in sym:
+                tokens = sym.split('_')
+                number_entry = tokens[len(tokens) - 1]
+                sym = ord_translate[dll][int(number_entry)].decode()
+            try:
+                exps[dll].append(sym)
+
+            except KeyError:
+                exps[dll] = [sym]
+
+        return exps
