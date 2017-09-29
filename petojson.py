@@ -9,4 +9,5 @@ if __name__ == '__main__':
     pe.dump_imports()
     pe.dump_exports()
     pe.dump_resources()
+    pe.dump_tls()
     print(json.dumps(pe.dict_pe))

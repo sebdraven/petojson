@@ -14,12 +14,16 @@ class PEParser:
     def __init__(self, path):
         self.path = path
         self.pe = None
+        self.data = None
+        self.sections =  None
         self.dict_pe = {
 
         }
 
     def load(self):
         self.pe = pepy.parse(self.path)
+        self.data = bytes(self.pe.get_data())
+        self.sections = self.pe.get_sections()
 
         is_exe, is_dll, is_driver = Utils.get_characteristics(self.pe.characteristics)
 
@@ -43,7 +47,7 @@ class PEParser:
             'x86': self.pe.machine == 0x14c,
             'x86_64': self.pe.machine == 0x8664 or self.pe.machine == 0x0200,
             'size': os.stat(self.path).st_size,
-            'number_sections': 0,
+            'number_sections': len(self.sections),
             'resources': [],
             'Date Compilation': datetime.datetime.fromtimestamp(int(self.pe.timedatestamp)
                                                                 ).strftime('%Y-%m-%d %H:%M:%S')
@@ -54,8 +58,7 @@ class PEParser:
 
     def dump_sections(self):
 
-        for sec in self.pe.get_sections():
-            self.dict_pe['number_sections'] += 1
+        for sec in self.sections:
             md5_sec = None
             sha1_sec = None
             sha256_sec = None
@@ -115,3 +118,28 @@ class PEParser:
             res_dict['md5'], res_dict['sha1'], res_dict['sha256'], res_dict['ssdeep'] = Utils.get_hashes(res.data)
 
             self.dict_pe['resources'].append(res_dict)
+
+    def dump_tls(self):
+        tls_va, tls_size = self.pe.get_datadirectories()[pepy.DIR_TLS]
+        if tls_size > 0:
+            tls_data_struct = Utils.get_tls(self.pe.get_bytes(tls_va+self.pe.imagebase, tls_size))
+            offset = Utils.get_offset_from_rva(tls_data_struct['AddressOfCallBacks'] - self.pe.imagebase, len(self.data)
+                                               , self.sections, self.pe.sectionalignement, self.pe.filealingment)
+
+            while Utils.get_dword_from_offset(offset, self.data):
+                cb = Utils.get_dword_from_offset(offset, self.data) - self.pe.imagebase
+                section = Utils.get_section_from_rva(cb, self.sections, self.pe.sectionalignement, self.pe.filealingment
+                                                     , len(self.data))
+                section_name = ''
+                if section:
+                    section_name = section.name
+
+                elem = {}
+
+                elem['call_back'] = "    0x%08x" % cb
+
+                elem['section_name'] = section_name
+
+                self.dict_pe['tls'].append(elem)
+
+                offset += 4

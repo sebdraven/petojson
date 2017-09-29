@@ -1,4 +1,5 @@
 import math
+import struct
 from collections import Counter, OrderedDict
 
 import ssdeep
@@ -7,6 +8,10 @@ import pepy
 from peanalysis.ordinal import ord_translate
 
 class Utils:
+
+    FILE_ALIGNMENT_HARDCODED_VALUE = 0x200
+    FileAlignment_Warning = False  # We only want to print the warning once
+    SectionAlignment_Warning = False  # We only want to print the warning once
 
     @staticmethod
     def get_hashes(data):
@@ -71,6 +76,14 @@ class Utils:
                  }
 
     @staticmethod
+    def get_dword_from_offset(offset, data):
+        if offset + 4 > len(data) and (offset+1)*4 > len(data):
+            return None
+
+        return struct.unpack('<I', data[offset:(offset+4)])[0]
+
+
+    @staticmethod
     def get_characteristics(characteristics):
         is_dll = bool(characteristics & 0x2000)
         is_driver = bool(characteristics & 0x1000)
@@ -133,3 +146,124 @@ class Utils:
                 exps[dll] = [sym]
 
         return exps
+
+    @staticmethod
+    def get_tls(tlsData):
+        tls_data_dict = {}
+        startAddressOfRawData,endAddressOfRawData,addressOfIndex,addressOfCallBacks,sizeOfZeroFill,characteristics\
+            = struct.unpack('<IIIIII', tlsData)
+        tls_data_dict['StartAddressOfRawData'] = startAddressOfRawData
+        tls_data_dict['EndAddressOfRawData'] = endAddressOfRawData
+        tls_data_dict['AddressOfIndex'] = addressOfIndex
+        tls_data_dict['AddressOfCallBacks'] = addressOfCallBacks
+        tls_data_dict['SizeOfZeroFill'] = sizeOfZeroFill
+        tls_data_dict['Characteristics'] = characteristics
+        return tls_data_dict
+
+    @staticmethod
+    def adjust_SectionAlignment(val, section_alignment, file_alignment):
+        global SectionAlignment_Warning
+        if file_alignment < Utils.FILE_ALIGNMENT_HARDCODED_VALUE:
+            if file_alignment != section_alignment and SectionAlignment_Warning is False:
+                SectionAlignment_Warning = True
+
+        if section_alignment < 0x1000:  # page size
+            section_alignment = file_alignment
+
+        # 0x200 is the minimum valid FileAlignment according to the documentation
+        # although ntoskrnl.exe has an alignment of 0x80 in some Windows versions
+        #
+        # elif section_alignment < 0x80:
+        #    section_alignment = 0x80
+
+        if section_alignment and val % section_alignment:
+            return section_alignment * (int(val / section_alignment))
+        return val
+
+    @staticmethod
+    def power_of_two(val):
+        return val != 0 and (val & (val - 1)) == 0
+
+    @staticmethod
+    def adjust_FileAlignment(val, file_alignment):
+        global FileAlignment_Warning
+        if file_alignment > Utils.FILE_ALIGNMENT_HARDCODED_VALUE:
+            # If it's not a power of two, report it:
+            if not Utils.power_of_two(file_alignment) and FileAlignment_Warning is False:
+                FileAlignment_Warning = True
+
+        if file_alignment < Utils.FILE_ALIGNMENT_HARDCODED_VALUE:
+            return val
+        return (int(val / 0x200)) * 0x200
+
+    @staticmethod
+    def get_next_addr_of_section(sections,index):
+        if index < len(sections) - 1:
+            return sections[index + 1].virtaddr
+        return None
+
+    @staticmethod
+    def get_section_from_rva(rva, sections, section_alignement, file_alignement, size_of_file):
+        sect_found = []
+        for index,s in enumerate(sections):
+            next_section_virtual_address = Utils.get_next_addr_of_section(sections, index)
+            if Utils.contains_rva(rva, s, section_alignement, file_alignement, next_section_virtual_address,size_of_file):
+                sect_found.append(s)
+
+            if sect_found:
+                return sect_found[0]
+
+        return None
+
+    @staticmethod
+    def contains_rva(rva, section, file_alignment, section_alignment, next_section_virtual_address, size_of_file):
+        # Check if the SizeOfRawData is realistic. If it's bigger than the size of
+        # the whole PE file minus the start address of the section it could be
+        # either truncated or the SizeOfRawData contain a misleading value.
+        # In either of those cases we take the VirtualSize
+        #
+        if size_of_file - Utils.adjust_FileAlignment(section.pointerrawdata,
+                                                     file_alignment) < section.length:
+            # PECOFF documentation v8 says:
+            # VirtualSize: The total size of the section when loaded into memory.
+            # If this value is greater than SizeOfRawData, the section is zero-padded.
+            # This field is valid only for executable images and should be set to zero
+            # for object files.
+            #
+            size = section.virtsize
+        else:
+            size = max(section.length, section.virtsize)
+
+        VirtualAddress_adj = Utils.adjust_SectionAlignment(section.virtaddr,
+                                                           section_alignment,
+                                                           file_alignment)
+
+        # Check whether there's any section after the current one that starts before the
+        # calculated end for the current one, if so, cut the current section's size
+        # to fit in the range up to where the next section starts.
+        if (next_section_virtual_address is not None and next_section_virtual_address > section.virtaddr
+            and VirtualAddress_adj + size > next_section_virtual_address):
+
+            size = next_section_virtual_address - VirtualAddress_adj
+
+        return VirtualAddress_adj <= rva < VirtualAddress_adj + size
+
+    @staticmethod
+    def get_offset_from_rva_by_section(rva, section, sectionAlignment, fileAlignment):
+        return (rva -
+                Utils.adjust_SectionAlignment(
+                    section.virtaddr,
+                    sectionAlignment,
+                    fileAlignment)
+                ) + Utils.adjust_FileAlignment(
+            section.pointerrawdata,
+            fileAlignment)
+
+    @staticmethod
+    def get_offset_from_rva(rva, size_of_file,sections, section_alignment, file_alignment):
+        section = Utils.get_section_from_rva(rva, sections, section_alignment, file_alignment,size_of_file)
+        if not section:
+            if rva < size_of_file:
+                return rva
+
+        return Utils.get_offset_from_rva_by_section(rva, section, section_alignment, file_alignment)
