@@ -133,8 +133,8 @@ class Utils:
     @staticmethod
     def get_exports(exports_win):
         exps = OrderedDict()
-        for imp in exports_win:
-            dll, sym = imp.name, imp.sym
+        for exp in exports_win:
+            dll, sym = exp.mod, exp.func
             if 'ORDINAL' in sym:
                 tokens = sym.split('_')
                 number_entry = tokens[len(tokens) - 1]
