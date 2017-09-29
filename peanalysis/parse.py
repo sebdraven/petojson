@@ -53,8 +53,7 @@ class PEParser:
                                                                 ).strftime('%Y-%m-%d %H:%M:%S')
         }
 
-        self.dict_pe['hashes']['md5'], self.dict_pe['hashes']['sha1'], self.dict_pe['hashes']['sha256'], self.dict_pe['hashes']['ssdeep'] = Utils.get_hashes(
-            open(self.path,'rb').read())
+        self.dict_pe['hashes']['md5'], self.dict_pe['hashes']['sha1'], self.dict_pe['hashes']['sha256'], self.dict_pe['hashes']['ssdeep'] = Utils.get_hashes(self.data)
 
     def dump_sections(self):
 
