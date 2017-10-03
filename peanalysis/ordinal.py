@@ -521,6 +521,8 @@ ord_translate = {
     },
     'SHLWAPI.DLL':{
 
-        29: b'IsCharSpaceW'
+        29: b'IsCharSpaceW',
+        14: b'GetAcceptLanguagesA',
+        15: b'GetAcceptLanguagesW'
     }
 }

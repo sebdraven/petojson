@@ -110,9 +110,13 @@ class Utils:
         for imp in imports_win:
             dll, sym = imp.name, imp.sym
             if 'ORDINAL' in sym:
-                tokens = sym.split('_')
-                number_entry = tokens[len(tokens) - 1]
-                sym = ord_translate[dll][int(number_entry)].decode()
+                try:
+                    tokens = sym.split('_')
+                    number_entry = tokens[len(tokens) - 1]
+                    sym = ord_translate[dll][int(number_entry)].decode()
+                except KeyError:
+                    print('ordinal not found %s %s' % (dll, number_entry))
+                    sym = 'ordinal_%s' % number_entry
             try:
                 imps[dll].append(sym)
 
