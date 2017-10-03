@@ -518,5 +518,9 @@ ord_translate = {
         441: b'VarUI8FromDec',
         442: b'RegisterTypeLibForUser',
         443: b'UnRegisterTypeLibForUser',
+    },
+    'SHLWAPI.DLL':{
+
+        29: b'IsCharSpaceW'
     }
 }
