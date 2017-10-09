@@ -58,7 +58,7 @@ url = "https://www.twitter.com/sebdraven"
 #+---------------------------------------------------------------------------+
 #| Keywords to describe the application
 #+---------------------------------------------------------------------------+
-keywords = ["VIRALSTUDIO"]
+keywords = ["Malware, PE Format,RE"]
 
 #+---------------------------------------------------------------------------+
 #| Long description
