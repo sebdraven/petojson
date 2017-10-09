@@ -67,3 +67,4 @@ keywords = ["Malware, PE Format,RE"]
 """@deprecated: the official long description is now the full README.md file"""
 long_description = ""
 
+licenseName="MIT"
