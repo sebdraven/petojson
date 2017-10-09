@@ -35,3 +35,12 @@ or
         pe.dump_resources()
         pe.dump_tls() 
         json.dumps(pe.dict_pe)
+
+Todo
+=======
+
+Support:
+
+* PE 64bits format
+* PEHash
+* Assembly and Graph flow
