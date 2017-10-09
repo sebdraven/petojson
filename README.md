@@ -13,7 +13,7 @@ Installation
 * Install pe-parse https://github.com/sebdraven/pe-parse 
 
 
-* ` pip install -r requierements.txt `
+* ` pip install -r requirements.txt `
 
 
 * `python3.5 setup.py install`
