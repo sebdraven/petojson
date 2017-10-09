@@ -67,8 +67,3 @@ keywords = ["VIRALSTUDIO"]
 """@deprecated: the official long description is now the full README.md file"""
 long_description = ""
 
-#+---------------------------------------------------------------------------+
-#| License used to publish the tool
-#+---------------------------------------------------------------------------+
-licenseName = "TO_BE_DEFINED"
-license = """TO_BE_DEFINED"""
