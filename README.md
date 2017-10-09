@@ -44,3 +44,8 @@ Support:
 * PE 64bits format
 * PEHash
 * Assembly and Graph flow
+
+Thanks
+=======
+
+Thanks to E.Carrera for the work on PEfile !
