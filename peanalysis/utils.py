@@ -12,6 +12,7 @@ class Utils:
     FILE_ALIGNMENT_HARDCODED_VALUE = 0x200
     FileAlignment_Warning = False  # We only want to print the warning once
     SectionAlignment_Warning = False  # We only want to print the warning once
+    exts = ['ocx', 'sys', 'dll']
 
     @staticmethod
     def get_hashes(data):
@@ -129,7 +130,19 @@ class Utils:
     def get_hashes_imports(imports_win):
         imphash=0
         impfuzzy = 0
-        imps = ['%s.%s' % (dll.lower().split('.')[0], s.lower()) for dll, symbols in imports_win.items() for s in symbols]
+        imps = []
+        for dll, symbols in imports_win.items():
+            ext = dll.lower().split('.')[1]
+            libname = dll.lower()
+
+            if ext in Utils.exts:
+                libname = dll.lower().split('.')[0]
+
+            for s in symbols:
+                imps.append('%s.%s' % (libname, s.lower()))
+
+
+        #imps = ['%s.%s' % (dll.lower(), s.lower()) for dll, symbols in imports_win.items() for s in symbols]
         impfuzzy = ssdeep.hash(','.join(sorted(imps)))
         imphash = hashlib.md5(','.join(imps).encode()).hexdigest()
         return imphash, impfuzzy
